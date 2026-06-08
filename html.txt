@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Control con dedo</title>
+<style>
+#cuadrado{
+width:50px;
+height:50px;
+background:red;
+position:absolute;
+left:200px;
+top:200px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Control con Teachable Machine</h2>
+
+<div id="cuadrado"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
+
+<script>
+
+const URL = "PEGA_AQUI_TU_URL/";
+
+let model;
+let webcam;
+let x = 200;
+let y = 200;
+
+async function init(){
+
+model = await tmImage.load(
+URL + "model.json",
+URL + "metadata.json"
+);
+
+webcam = new tmImage.Webcam(300,300,true);
+
+await webcam.setup();
+await webcam.play();
+
+document.body.appendChild(webcam.canvas);
+
+window.requestAnimationFrame(loop);
+}
+
+async function loop(){
+webcam.update();
+await predict();
+window.requestAnimationFrame(loop);
+}
+
+async function predict(){
+
+const prediction = await model.predict(webcam.canvas);
+
+let mejor = prediction[0];
+
+for(let i=1;i<prediction.length;i++){
+if(prediction[i].probability > mejor.probability){
+mejor = prediction[i];
+}
+}
+
+if(mejor.probability > 0.8){
+
+if(mejor.className=="Derecha") x += 5;
+if(mejor.className=="Izquierda") x -= 5;
+if(mejor.className=="Arriba") y -= 5;
+if(mejor.className=="Abajo") y += 5;
+
+const cuadrado = document.getElementById("cuadrado");
+
+cuadrado.style.left = x + "px";
+cuadrado.style.top = y + "px";
+}
+}
+
+init();
+
+</script>
+
+</body>
+</html>
